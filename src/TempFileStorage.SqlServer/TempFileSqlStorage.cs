@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 
 namespace TempFileStorage.SqlServer;
@@ -17,7 +18,7 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
         var tempFile = new TempFile
         {
             Filename = filename,
-            CacheTimeout = DateTime.Now.Add(timeout)
+            CacheTimeout = DateTime.UtcNow.Add(timeout)
         };
 
         await using var connection = new SqlConnection(connectionString);
@@ -58,7 +59,7 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
             : "SELECT COUNT(*) FROM [TempFileStorage] WHERE [Key] = @key AND [CacheTimeout] > @timeout";
         await using var cmd = new SqlCommand(query, connection);
         cmd.Parameters.AddWithValue("key", key);
-        cmd.Parameters.AddWithValue("timeout", DateTime.Now);
+        cmd.Parameters.AddWithValue("timeout", DateTime.UtcNow);
 
         var count = (int?) await cmd.ExecuteScalarAsync();
 
@@ -77,7 +78,7 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
             : "SELECT [Filename], [FileSize], [IsUpload], [CacheTimeout] FROM [TempFileStorage] WHERE [Key] = @key AND [CacheTimeout] > @timeout";
         await using var cmd = new SqlCommand(query, connection);
         cmd.Parameters.AddWithValue("key", key);
-        cmd.Parameters.AddWithValue("timeout", DateTime.Now);
+        cmd.Parameters.AddWithValue("timeout", DateTime.UtcNow);
 
         var reader = await cmd.ExecuteReaderAsync();
 
@@ -133,9 +134,29 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
 
     private static async Task CleanupStorage(SqlConnection connection)
     {
-        var command = new SqlCommand("DELETE FROM [TempFileStorage] WHERE [CacheTimeout] < @timeout", connection);
-        command.Parameters.AddWithValue("timeout", DateTime.Now);
+        var timer = new Stopwatch();
+        timer.Start();
 
-        await command.ExecuteNonQueryAsync();
+        int deletedCount;
+        bool running;
+
+        do
+        {
+            try
+            {
+                var command = new SqlCommand("DELETE TOP(1) FROM [TempFileStorage] WHERE [CacheTimeout] < @timeout", connection);
+                command.Parameters.AddWithValue("timeout", DateTime.UtcNow);
+                command.CommandTimeout = 10; // Give a max timeout of 10 seconds for a single delete
+                deletedCount = (int?) await command.ExecuteScalarAsync() ?? 0;
+            }
+            catch (TimeoutException)
+            {
+                throw new TempFileStorageException("Unable to cleanup temp SQL storage, command timeout exceeded");
+            }
+
+            // Stop the cleanup task if we are running longer than 5 seconds
+            running = timer.ElapsedMilliseconds < 5000;
+
+        } while (deletedCount > 0 && running);
     }
 }

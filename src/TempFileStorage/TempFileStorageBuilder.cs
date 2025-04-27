@@ -8,14 +8,8 @@ public interface ITempFileStorageBuilder
     TempFileStorageOptions Options { get; }
 }
 
-internal class TempFileStorageBuilder : ITempFileStorageBuilder
+internal class TempFileStorageBuilder(IApplicationBuilder builder, TempFileStorageOptions options) : ITempFileStorageBuilder
 {
-    public TempFileStorageBuilder(IApplicationBuilder builder, TempFileStorageOptions options)
-    {
-        Builder = builder;
-        Options = options;
-    }
-
-    public IApplicationBuilder Builder { get; }
-    public TempFileStorageOptions Options { get; }
+    public IApplicationBuilder Builder { get; } = builder;
+    public TempFileStorageOptions Options { get; } = options;
 }

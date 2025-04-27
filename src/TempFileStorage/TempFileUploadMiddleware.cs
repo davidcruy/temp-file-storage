@@ -5,15 +5,8 @@ using System.Text.Json;
 
 namespace TempFileStorage;
 
-public class TempFileUploadMiddleware
+public class TempFileUploadMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-
-    public TempFileUploadMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
-
     public async Task InvokeAsync(HttpContext context, ITempFileStorage storage)
     {
         if (context.Request.Method.Equals("POST"))
@@ -68,7 +61,7 @@ public class TempFileUploadMiddleware
             return;
         }
 
-        await _next(context);
+        await next(context);
     }
 
     /// <summary>

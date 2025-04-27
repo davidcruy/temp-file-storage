@@ -2,15 +2,12 @@
 
 namespace TempFileStorage;
 
-public static class MiddlewareExtensions
+public static class ApplicationBuilderExtensions
 {
-    public static IApplicationBuilder UseTempFiles(this IApplicationBuilder builder)
-        => builder.UseTempFiles(tempFileBuilder => { });
-
-    public static IApplicationBuilder UseTempFiles(this IApplicationBuilder builder, Action<ITempFileStorageBuilder> extraOptions)
+    public static IApplicationBuilder UseTempFiles(this IApplicationBuilder builder, Action<ITempFileStorageBuilder> extraOptions = null)
     {
         var customBuilder = new TempFileStorageBuilder(builder, new TempFileStorageOptions());
-        extraOptions.Invoke(customBuilder);
+        extraOptions?.Invoke(customBuilder);
 
         return builder
             .Map(customBuilder.Options.DownloadFilePattern, applicationBuilder =>

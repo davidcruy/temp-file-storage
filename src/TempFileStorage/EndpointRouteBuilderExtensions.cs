@@ -6,12 +6,11 @@ namespace TempFileStorage;
 public static class EndpointRouteBuilderExtensions
 {
     /// <summary>
-    /// Enable TempFileStorage middleware to download and upload files.
+    /// Enable TempFileStorage middleware to download files.
     /// Default patterns:
     /// - /download-file
-    /// - /upload-file
     /// </summary>
-    public static IEndpointConventionBuilder MapTempFileStorage(this IEndpointRouteBuilder endpoints, string downloadPattern = "/download-file", string uploadPattern = "/upload-file")
+    public static IEndpointConventionBuilder MapTempFileDownload(this IEndpointRouteBuilder endpoints, string downloadPattern = "/download-file")
     {
         var app = endpoints.CreateApplicationBuilder();
 
@@ -19,7 +18,17 @@ public static class EndpointRouteBuilderExtensions
             .UseMiddleware<TempFileDownloadMiddleware>()
             .Build();
 
-        endpoints.Map(downloadPattern, downloadPipeline);
+        return endpoints.Map(downloadPattern, downloadPipeline);
+    }
+
+    /// <summary>
+    /// Enable TempFileStorage middleware to upload files.
+    /// Default patterns:
+    /// - /upload-file
+    /// </summary>
+    public static IEndpointConventionBuilder MapTempFileUpload(this IEndpointRouteBuilder endpoints, string uploadPattern = "/upload-file")
+    {
+        var app = endpoints.CreateApplicationBuilder();
 
         var uploadPipeline = app
             .UseMiddleware<TempFileUploadMiddleware>()

@@ -3,7 +3,7 @@
 public static class TempFileKeyGenerator
 {
     private const string Characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    private static readonly Random Random = new Random(DateTime.Now.Millisecond);
+    private static readonly Random Random = new();
 
     public static string Generate()
     {
