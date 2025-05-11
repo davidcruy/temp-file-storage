@@ -19,32 +19,45 @@ Or via the .NET Core command line interface:
 
 ### Usage
 
-Add the following service to the container:
+Add temp files to your project:
 
 ```C#
-services.AddSingleton<ITempFileStorage, TempFileMemoryStorage>();
+builder.Services
+    .AddTempFiles(options =>
+    {
+        // Temporary files will be held in memory
+        options.MemoryStorage();
+
+        // The interval (in minutes) that will perform a cleanup of all temporary files (default is 15)
+        options.CleanupInterval = 15;
+    });
 ```
 
-Register the Middleware in your Startup.cs to activate the request-middleware:
+Register the Middleware in your Program.cs to activate the request-middleware:
 
 ```C#
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapTempFileStorage(
-        downloadPattern: "/download-file",
-        uploadPattern: "/upload-file"
-    );
-});
+// Map the download-middleware with a specific pattern (default is "/download-file")
+app.MapTempFileDownload("/download-file");
+
+// Map the upload-middleware with a specific pattern (default is "/upload-file")
+app.MapTempFileUpload("/upload-file");
 ```
 
 ### SqlServer
+
+You need to persist your temp file storage in a database if you want to use this in production.
 
 Install the package [TempFileStorage.SqlServer with NuGet](https://www.nuget.org/packages/TempFileStorage.SqlServer):
 
 Run the SQL-script `install.sql` on your DB-server.
 
-Swap the TempFileMemoryStorage with `TempFileSqlStorage`
+Swap the `MemoryStorage` with `SqlServer`
 
 ```C#
-services.AddSingleton<ITempFileStorage>(c => new TempFileSqlStorage(Configuration.GetConnectionString("Database")));
+builder.Services
+    .AddTempFiles(options =>
+    {
+        // Temporary files will be held in database
+        options.SqlServer(builder.Configuration.GetConnectionString("Database"));
+    });
 ```
