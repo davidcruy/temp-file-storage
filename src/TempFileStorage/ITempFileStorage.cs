@@ -9,4 +9,6 @@ public interface ITempFileStorage
     Task<bool> ContainsKey(string key, bool filterUpload = false);
     Task<TempFile> GetFileInfo(string key, bool filterUpload = false);
     Task<byte[]> Download(string key);
+
+    Task CleanupStorage(CancellationToken cancellationToken);
 }

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace TempFileStorage;
+namespace TempFileStorage.Middleware;
 
-public class TempFileDownloadMiddleware(RequestDelegate next)
+internal class TempFileDownloadMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, ITempFileStorage storage)
     {
@@ -21,7 +21,7 @@ public class TempFileDownloadMiddleware(RequestDelegate next)
             var content = await storage.Download(fileKeys[0]);
 
             context.Response.ContentType = "application/octet-stream";
-            context.Response.Headers.Add("content-disposition", new[] { $"attachment;filename=\"{fileInfo.Filename}\"" });
+            context.Response.Headers.Append("content-disposition", new[] { $"attachment;filename=\"{fileInfo.Filename}\"" });
             context.Response.ContentLength = content.Length;
 
             await context.Response.Body.WriteAsync(content);

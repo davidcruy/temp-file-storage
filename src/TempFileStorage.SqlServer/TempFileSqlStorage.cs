@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace TempFileStorage.SqlServer;
 
-public class TempFileSqlStorage(string connectionString) : ITempFileStorage
+internal class TempFileSqlStorage(string connectionString) : ITempFileStorage
 {
     public Task<TempFile> StoreFile(string filename, byte[] content, bool isUpload = false)
     {
@@ -44,7 +44,7 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
             tempFile.FileSize = contentStream.Length;
         }
 
-        await CleanupStorage(connection);
+        await connection.CloseAsync();
 
         return tempFile;
     }
@@ -63,7 +63,7 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
 
         var count = (int?) await cmd.ExecuteScalarAsync();
 
-        await CleanupStorage(connection);
+        await connection.CloseAsync();
 
         return count is 1;
     }
@@ -101,7 +101,7 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
         }
 
         await reader.CloseAsync();
-        await CleanupStorage(connection);
+        await connection.CloseAsync();
 
         return tempFile;
     }
@@ -127,15 +127,17 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
         }
 
         await reader.CloseAsync();
-        await CleanupStorage(connection);
+        await connection.CloseAsync();
 
         return content;
     }
 
-    private static async Task CleanupStorage(SqlConnection connection)
+    public async Task CleanupStorage(CancellationToken cancellationToken)
     {
-        var timer = new Stopwatch();
-        timer.Start();
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var timer = Stopwatch.StartNew();
 
         int deletedCount;
         bool running;
@@ -147,7 +149,7 @@ public class TempFileSqlStorage(string connectionString) : ITempFileStorage
                 var command = new SqlCommand("DELETE TOP(1) FROM [TempFileStorage] WHERE [CacheTimeout] < @timeout", connection);
                 command.Parameters.AddWithValue("timeout", DateTime.UtcNow);
                 command.CommandTimeout = 10; // Give a max timeout of 10 seconds for a single delete
-                deletedCount = (int?) await command.ExecuteScalarAsync() ?? 0;
+                deletedCount = await command.ExecuteNonQueryAsync(cancellationToken);
             }
             catch (TimeoutException)
             {

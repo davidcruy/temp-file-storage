@@ -1,4 +1,19 @@
-﻿namespace TempFileStorage;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace TempFileStorage;
+
+public static class TempFileStorageProviderConfigurationExtensions
+{
+    public static TempFileStorageOptions MemoryStorage(this TempFileStorageOptions configuration)
+    {
+        configuration.ConfigureAction = services =>
+        {
+            services.AddSingleton<ITempFileStorage, TempFileMemoryStorage>();
+        };
+
+        return configuration;
+    }
+}
 
 public class TempFileMemoryStorage : ITempFileStorage
 {
@@ -56,5 +71,11 @@ public class TempFileMemoryStorage : ITempFileStorage
         }
 
         return Task.FromResult(fileInfo);
+    }
+
+    public Task CleanupStorage(CancellationToken cancellationToken)
+    {
+        // Do nothing
+        return Task.CompletedTask;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
+using TempFileStorage.Middleware;
 
 namespace TempFileStorage;
 

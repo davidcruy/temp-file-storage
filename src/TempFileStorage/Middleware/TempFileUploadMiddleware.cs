@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.WebUtilities;
-using System.Text.Json;
 
-namespace TempFileStorage;
+namespace TempFileStorage.Middleware;
 
-public class TempFileUploadMiddleware(RequestDelegate next)
+internal class TempFileUploadMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, ITempFileStorage storage)
     {
