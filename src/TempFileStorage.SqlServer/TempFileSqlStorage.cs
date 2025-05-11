@@ -148,7 +148,7 @@ internal class TempFileSqlStorage(string connectionString) : ITempFileStorage
             {
                 var command = new SqlCommand("DELETE TOP(1) FROM [TempFileStorage] WHERE [CacheTimeout] < @timeout", connection);
                 command.Parameters.AddWithValue("timeout", DateTime.UtcNow);
-                command.CommandTimeout = 10; // Give a max timeout of 10 seconds for a single delete
+                command.CommandTimeout = 30; // Give a max timeout of 30 seconds for a single delete
                 deletedCount = await command.ExecuteNonQueryAsync(cancellationToken);
             }
             catch (TimeoutException)
@@ -156,8 +156,8 @@ internal class TempFileSqlStorage(string connectionString) : ITempFileStorage
                 throw new TempFileStorageException("Unable to cleanup temp SQL storage, command timeout exceeded");
             }
 
-            // Stop the cleanup task if we are running longer than 5 seconds
-            running = timer.ElapsedMilliseconds < 5000;
+            // Stop the cleanup task if we are running longer than 1 minute
+            running = timer.Elapsed < TimeSpan.FromMinutes(1);
 
         } while (deletedCount > 0 && running);
     }
