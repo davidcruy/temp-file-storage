@@ -2,40 +2,50 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 
 namespace TempFileStorage.Middleware;
 
-internal class TempFileUploadMiddleware(RequestDelegate next)
+internal class TempFileUploadMiddleware(RequestDelegate next, ILogger<TempFileUploadMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context, ITempFileStorage storage)
     {
-        if (context.Request.Method.Equals("POST"))
+        if (!HttpMethods.IsPost(context.Request.Method))
         {
-            // based on:
-            // https://github.com/aspnet/Entropy/blob/rel/1.1.0/samples/Mvc.FileUpload/Controllers/FileController.cs#L47
-            var multipartBoundary = context.Request.GetMultipartBoundary();
-            if (string.IsNullOrEmpty(multipartBoundary))
-            {
-                throw new Exception($"Expected a multipart request, but got '{context.Request.ContentType}'.");
-            }
+            await next(context);
+            return;
+        }
 
-            // Used to accumulate all the form url encoded key value pairs in the request.
-            //var formAccumulator = new KeyValueAccumulator();
-            //string targetFilePath = null;
-            var files = new List<FileInfo>();
-            var reader = new MultipartReader(multipartBoundary, context.Request.Body);
+        var multipartBoundary = context.Request.GetMultipartBoundary();
+        if (string.IsNullOrEmpty(multipartBoundary))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync($"Expected a multipart request, but got '{context.Request.ContentType}'.");
+            return;
+        }
 
-            var section = await reader.ReadNextSectionAsync();
-            while (section != null)
+        // Used to accumulate all the form url encoded key value pairs in the request
+        var files = new List<FileInfo>();
+        var reader = new MultipartReader(multipartBoundary, context.Request.Body)
+        {
+            BodyLengthLimit = storage.Options.MaxFileSize
+        };
+        var cancellation = context.RequestAborted;
+
+        var section = await reader.ReadNextSectionAsync(cancellation);
+        while (section != null)
+        {
+            // This will reparse the content disposition header
+            // Create a FileMultipartSection using its constructor to pass
+            // in a cached disposition header
+            var fileSection = section.AsFileSection();
+            if (fileSection != null)
             {
-                // This will reparse the content disposition header
-                // Create a FileMultipartSection using its constructor to pass
-                // in a cached disposition header
-                var fileSection = section.AsFileSection();
-                if (fileSection != null)
+                var fileName = fileSection.FileName;
+
+                try
                 {
-                    var fileName = fileSection.FileName;
-                    var tempFile = await storage.StoreFile(fileName, fileSection.FileStream, isUpload: true);
+                    var tempFile = await storage.StoreFile(fileName, fileSection.FileStream, isUpload: true, deleteOnDownload: false, token: cancellation);
 
                     files.Add(new FileInfo
                     {
@@ -44,24 +54,32 @@ internal class TempFileUploadMiddleware(RequestDelegate next)
                         Key = tempFile.Key
                     });
                 }
+                catch (IOException ex) when (ex.Message.Contains("Multipart body length limit"))
+                {
+                    // This is the exception thrown by the reader
+                    logger.LogWarning(ex, "File upload exceeded size limit of {MaxFileSize} bytes", storage.Options.MaxFileSize);
 
-                // Drains any remaining section body that has not been consumed and
-                // reads the headers for the next section.
-                section = await reader.ReadNextSectionAsync();
+                    context.Response.StatusCode = StatusCodes.Status413RequestEntityTooLarge;
+                    await context.Response.WriteAsync($"File size exceeds maximum of {storage.Options.MaxFileSize} bytes.", cancellationToken: cancellation);
+                    return;
+                }
             }
 
-            // Transform keys to JSON array
-            var responseJson = JsonSerializer.Serialize(files, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = true
-            });
-
-            await context.Response.WriteAsync(responseJson);
-            return;
+            // Drains any remaining section body that has not been consumed and
+            // reads the headers for the next section.
+            section = await reader.ReadNextSectionAsync(cancellation);
         }
 
-        await next(context);
+        context.Response.StatusCode = StatusCodes.Status201Created;
+        context.Response.ContentType = "application/json";
+
+        // Transform keys to JSON array
+        var responseJson = JsonSerializer.Serialize(files, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await context.Response.WriteAsync(responseJson, cancellation);
     }
 
     /// <summary>

@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>default</LangVersion>
         <Nullable>disable</Nullable>
-        <PackageId>TempFileStorage.SqlServer</PackageId>
-        <Version>4.0.0-alpha3</Version>
+        <PackageId>TempFileStorage.AzureBlobStorage</PackageId>
+        <Version>4.0.0-alpha2</Version>
         <Authors>David Vercruyssen</Authors>
         <Company>Aranea</Company>
         <PackageProjectUrl>https://github.com/davidcruy/TempFileStorage</PackageProjectUrl>
@@ -14,7 +14,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
         <RepositoryType>Git</RepositoryType>
-        <RootNamespace>TempFileStorage.SqlServer</RootNamespace>
+        <RootNamespace>TempFileStorage.AzureBlobStorage</RootNamespace>
 
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <IncludeSymbols>true</IncludeSymbols>
@@ -22,20 +22,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Remove="install.sql" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <EmbeddedResource Include="install.sql" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Include="..\..\LICENSE" Pack="true" PackagePath="" Visible="false" />
         <None Include="..\..\README.md" Pack="true" PackagePath="" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
         <PackageReference Include="TempFileStorage" Version="4.0.0-alpha4" />
     </ItemGroup>
 

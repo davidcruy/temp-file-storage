@@ -52,7 +52,7 @@ internal class BackgroundCleanupHostedService(TimeSpan interval, IServiceScopeFa
     private async Task ExecuteTaskAsync(CancellationToken cancellationToken)
     {
         logger.LogDebug("Start temp file storage cleanup");
-        
+
         try
         {
             using var scope = factory.CreateScope();

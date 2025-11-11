@@ -1,11 +1,12 @@
 TempFileStorage
 ===============
 
-Easy .NET standard library for handling file-uploads
+Easy .NET library for handling file asynchronous uploads and downloads.
 
-Just use ITempFileStorage to store your file during uploads, this will return a key for later use, for when you want to save your form.
+Let the client upload a file via ´/upload-file´, send the file-key when you are submitting the form, and retrieve the file from ´ITempFileStorage´ in your controller.
+Or, generate a file in your backend, store the file in ´ITempFileStorage´ and send the key to the client. They can fetch it trough ´/download-file´.
 
-Core package comes with In-Memory storage that is usefull for testing or non-multi server setups.
+Core package comes with In-Memory storage that is useful for testing. You can extend with SqlServer storage or Azure Blob storage.
 
 ### Installing TempFileStorage
 
@@ -25,11 +26,17 @@ Add temp files to your project:
 builder.Services
     .AddTempFiles(options =>
     {
-        // Temporary files will be held in memory
+        // Temporary files will be held in memory, this should only be used for testing
         options.MemoryStorage();
 
         // The interval (in minutes) that will perform a cleanup of all temporary files (default is 15)
         options.CleanupInterval = 15;
+
+        // The maximum file size (in bytes) that can be uploaded by the client (default is 50MB)
+        options.MaxFileSize = 1024 * 1024 * 50;
+
+        // The timeout (in minutes) for how long a file remains in the storage (default is 30)
+        options.DefaultTimeout = 30;
     });
 ```
 
@@ -43,9 +50,26 @@ app.MapTempFileDownload("/download-file");
 app.MapTempFileUpload("/upload-file");
 ```
 
+### Azure.Storage.Blobs
+
+You need to persist your temp file storage in storage blobs if you want to use this in production.
+
+Install the package [TempFileStorage.AzureBlobStorage with NuGet](https://www.nuget.org/packages/TempFileStorage.AzureBlobStorage):
+
+Swap the `MemoryStorage` with `AzureBlobStorage`
+
+```C#
+builder.Services
+    .AddTempFiles(options =>
+    {
+        // Temporary files will be held Azure blob storage container (default is "temp-file-storage")
+        options.AzureBlobStorage(builder.Configuration.GetConnectionString("StorageAccount"), containerName: "temp-file-storage");
+    });
+```
+
 ### SqlServer
 
-You need to persist your temp file storage in a database if you want to use this in production.
+Or, when you're not working in Azure, you can opt for SqlServer storage.
 
 Install the package [TempFileStorage.SqlServer with NuGet](https://www.nuget.org/packages/TempFileStorage.SqlServer):
 
