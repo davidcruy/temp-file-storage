@@ -38,7 +38,6 @@ internal class TempFileAzureBlobStorage : TempFileStorage
             DeleteOnDownload = deleteOnDownload
         };
 
-        // Create metadata for the blob
         var metadata = new Dictionary<string, string>
         {
             [MetaKeyFilename] = filename,
@@ -64,7 +63,6 @@ internal class TempFileAzureBlobStorage : TempFileStorage
 
     public override async Task<bool> ContainsKey(string key, bool filterUpload = false)
     {
-        // This is more efficient than GetFileInfo, as it avoids a separate ExistsAsync call.
         var fileInfo = await GetFileInfo(key, filterUpload);
 
         return fileInfo != null;
