@@ -54,7 +54,7 @@ internal class TempFileUploadMiddleware(RequestDelegate next, ILogger<TempFileUp
                         Key = tempFile.Key
                     });
                 }
-                catch (IOException ex) when (ex.Message.Contains("Multipart body length limit"))
+                catch (InvalidDataException ex) when (ex.Message.Contains("Multipart body length limit"))
                 {
                     // This is the exception thrown by the reader
                     logger.LogWarning(ex, "File upload exceeded size limit of {MaxFileSize} bytes", storage.Options.MaxFileSize);

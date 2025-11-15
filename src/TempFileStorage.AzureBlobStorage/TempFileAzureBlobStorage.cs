@@ -4,7 +4,7 @@ using Azure.Storage.Blobs.Models;
 
 namespace TempFileStorage.AzureBlobStorage;
 
-public class TempFileAzureBlobStorage : TempFileStorage
+internal class TempFileAzureBlobStorage : TempFileStorage
 {
     private readonly BlobContainerClient _containerClient;
     private readonly Lazy<Task> _ensureContainerExists;
@@ -119,7 +119,7 @@ public class TempFileAzureBlobStorage : TempFileStorage
         };
     }
 
-    public override async Task<byte[]> GetContent(string key)
+    public override async Task<byte[]> GetContent(string key, CancellationToken token = default)
     {
         await EnsureContainerAsync();
 
@@ -128,10 +128,10 @@ public class TempFileAzureBlobStorage : TempFileStorage
         try
         {
             // DownloadAsync returns the content in a stream
-            BlobDownloadInfo download = await blobClient.DownloadAsync();
+            BlobDownloadInfo download = await blobClient.DownloadAsync(token);
 
             await using var ms = new MemoryStream();
-            await download.Content.CopyToAsync(ms);
+            await download.Content.CopyToAsync(ms, token);
             return ms.ToArray();
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
@@ -171,12 +171,12 @@ public class TempFileAzureBlobStorage : TempFileStorage
     /// <summary>
     /// Deletes expired blobs from the container
     /// </summary>
-    public override async Task CleanupStorage(CancellationToken cancellationToken)
+    public override async Task CleanupStorage(CancellationToken token = default)
     {
         await EnsureContainerAsync();
 
         // Get all blobs with their metadata
-        await foreach (var blobItem in _containerClient.GetBlobsAsync(BlobTraits.Metadata, cancellationToken: cancellationToken))
+        await foreach (var blobItem in _containerClient.GetBlobsAsync(BlobTraits.Metadata, cancellationToken: token))
         {
             // Check if blob has timeout metadata
             if (!blobItem.Metadata.TryGetValue(MetaKeyCacheTimeout, out var timeoutString) || !DateTime.TryParse(timeoutString, out var cacheTimeout))
@@ -187,7 +187,7 @@ public class TempFileAzureBlobStorage : TempFileStorage
                 continue;
 
             var blobClient = _containerClient.GetBlobClient(blobItem.Name);
-            await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: cancellationToken);
+            await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: token);
         }
     }
 }

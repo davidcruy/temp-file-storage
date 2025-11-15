@@ -99,10 +99,10 @@ internal class TempFileSqlStorage(string connectionString, TempFileStorageOption
         return tempFile;
     }
 
-    public override async Task<byte[]> GetContent(string key)
+    public override async Task<byte[]> GetContent(string key, CancellationToken token = default)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync();
+        await connection.OpenAsync(token);
 
         await using var command = new SqlCommand("SELECT [Content] FROM [TempFileStorage] WHERE [Key] = @key", connection);
         command.CommandTimeout = 600;
@@ -187,10 +187,10 @@ internal class TempFileSqlStorage(string connectionString, TempFileStorageOption
         return deletedCount > 0;
     }
 
-    public override async Task CleanupStorage(CancellationToken cancellationToken)
+    public override async Task CleanupStorage(CancellationToken token = default)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await connection.OpenAsync(token);
 
         var timer = Stopwatch.StartNew();
 
@@ -204,7 +204,7 @@ internal class TempFileSqlStorage(string connectionString, TempFileStorageOption
                 var command = new SqlCommand("DELETE TOP(1) FROM [TempFileStorage] WHERE [CacheTimeout] < @timeout", connection);
                 command.Parameters.AddWithValue("timeout", DateTime.UtcNow);
                 command.CommandTimeout = 30; // Give a max timeout of 30 seconds for a single delete
-                deletedCount = await command.ExecuteNonQueryAsync(cancellationToken);
+                deletedCount = await command.ExecuteNonQueryAsync(token);
             }
             catch (TimeoutException)
             {

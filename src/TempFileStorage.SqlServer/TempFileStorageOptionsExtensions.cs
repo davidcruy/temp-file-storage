@@ -12,7 +12,10 @@ public static class TempFileStorageOptionsExtensions
     {
         configuration.ConfigureAction = services =>
         {
-            services.AddScoped<ITempFileStorage>(_ => new TempFileSqlStorage(connectionString, configuration));
+            services.AddScoped<ITempFileStorage>(_ =>
+            {
+                return new TempFileSqlStorage(connectionString, configuration);
+            });
         };
 
         return configuration;

@@ -37,6 +37,10 @@ public static class ServiceCollectionExtensions
         var options = new TempFileStorageOptions();
         optionsAction.Invoke(options);
 
+        // Configures TempFileMemoryStorage or another provider
+        options.ConfigureAction(services);
+
+        // Add options to container
         services.AddSingleton(options);
 
         services.AddHostedService(scope => new BackgroundCleanupHostedService(
