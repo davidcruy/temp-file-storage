@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>default</LangVersion>
         <Nullable>disable</Nullable>
-        <PackageId>TempFileStorage</PackageId>
+        <PackageId>TempFileStorage.AzureBlobStorage</PackageId>
         <Version>4.0.0</Version>
         <Authors>David Vercruyssen</Authors>
         <Company>Aranea</Company>
@@ -14,7 +14,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
         <RepositoryType>Git</RepositoryType>
-        <RootNamespace>TempFileStorage</RootNamespace>
+        <RootNamespace>TempFileStorage.AzureBlobStorage</RootNamespace>
 
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <IncludeSymbols>true</IncludeSymbols>
@@ -24,7 +24,11 @@
     <ItemGroup>
         <None Include="..\..\LICENSE" Pack="true" PackagePath="" Visible="false" />
         <None Include="..\..\README.md" Pack="true" PackagePath="" Visible="false" />
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
+        <PackageReference Include="TempFileStorage" Version="4.0.0" />
     </ItemGroup>
 
 </Project>

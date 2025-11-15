@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netcoreapp3.1;net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>default</LangVersion>
         <Nullable>disable</Nullable>
         <PackageId>TempFileStorage.SqlServer</PackageId>
-        <Version>3.2.0</Version>
+        <Version>4.0.0</Version>
         <Authors>David Vercruyssen</Authors>
         <Company>Aranea</Company>
         <PackageProjectUrl>https://github.com/davidcruy/TempFileStorage</PackageProjectUrl>
@@ -32,12 +32,11 @@
     <ItemGroup>
         <None Include="..\..\LICENSE" Pack="true" PackagePath="" Visible="false" />
         <None Include="..\..\README.md" Pack="true" PackagePath="" Visible="false" />
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Data.SqlClient" Version="3.1.5" />
-        <PackageReference Include="TempFileStorage" Version="3.2.0" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+        <PackageReference Include="TempFileStorage" Version="4.0.0" />
     </ItemGroup>
 
 </Project>

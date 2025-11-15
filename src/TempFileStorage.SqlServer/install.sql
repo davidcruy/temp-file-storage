@@ -16,3 +16,9 @@ BEGIN
     ALTER TABLE [TempFileStorage]
     ADD [IsUpload] BIT NOT NULL DEFAULT 0
 END;
+
+IF NOT EXISTS (SELECT 1 FROM SYS.COLUMNS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[TempFileStorage]') AND name = 'DeleteOnDownload')
+BEGIN
+    ALTER TABLE [TempFileStorage]
+        ADD [DeleteOnDownload] BIT NOT NULL DEFAULT 0
+END;
