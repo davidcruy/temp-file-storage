@@ -38,9 +38,13 @@ internal class TempFileAzureBlobStorage : TempFileStorage
             DeleteOnDownload = deleteOnDownload
         };
 
+        // CONVERSION: Convert UTF string to Base64 (which is always ASCII safe)
+        var filenameBytes = System.Text.Encoding.UTF8.GetBytes(filename);
+        var safeAsciiFilename = Convert.ToBase64String(filenameBytes);
+
         var metadata = new Dictionary<string, string>
         {
-            [MetaKeyFilename] = filename,
+            [MetaKeyFilename] = safeAsciiFilename,
             [MetaKeyIsUpload] = isUpload.ToString(),
             [MetaKeyDeleteOnDownload] = deleteOnDownload.ToString(),
             // Use "o" round-trip format for reliable DateTime parsing
@@ -90,7 +94,7 @@ internal class TempFileAzureBlobStorage : TempFileStorage
         if (!metadata.TryGetValue(MetaKeyCacheTimeout, out var timeoutString) ||
             !metadata.TryGetValue(MetaKeyIsUpload, out var isUploadString) ||
             !metadata.TryGetValue(MetaKeyDeleteOnDownload, out var deleteOnDownloadString) ||
-            !metadata.TryGetValue(MetaKeyFilename, out var filename))
+            !metadata.TryGetValue(MetaKeyFilename, out var safeAsciiFilename))
         {
             // This is a blob that wasn't created by this service, or is corrupt.
             return null;
@@ -106,6 +110,9 @@ internal class TempFileAzureBlobStorage : TempFileStorage
 
         if (!bool.TryParse(deleteOnDownloadString, out var deleteOnDownload))
             return null;
+
+        var originalBytes = Convert.FromBase64String(safeAsciiFilename);
+        var filename = System.Text.Encoding.UTF8.GetString(originalBytes);
 
         return new TempFile(key)
         {

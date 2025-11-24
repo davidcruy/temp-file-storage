@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +36,7 @@ internal class TempFileDownloadMiddleware(RequestDelegate next, ILogger<TempFile
         await using (var contentStream = await storage.GetContentStream(key))
         {
             context.Response.ContentType = "application/octet-stream";
-            context.Response.Headers.Append("content-disposition", new[] { $"attachment;filename=\"{fileInfo.Filename}\"" });
+            context.Response.Headers.Append("content-disposition", new[] { $"attachment;filename=\"{HttpUtility.UrlEncode(fileInfo.Filename)}\"" });
             context.Response.ContentLength = fileInfo.FileSize;
 
             await contentStream.CopyToAsync(context.Response.Body, 81920, context.RequestAborted);
