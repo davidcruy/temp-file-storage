@@ -20,9 +20,18 @@ internal class TempFileAzureBlobStorage : TempFileStorage
     /// <summary>
     /// Creates a new instance using a connection string.
     /// </summary>
-    public TempFileAzureBlobStorage(string connectionString, string containerName, TempFileStorageOptions options) : base(options)
+    public TempFileAzureBlobStorage(string connectionString, string containerName, TempFileStorageOptions options)
+        : this(new BlobContainerClient(connectionString, containerName), options)
     {
-        _containerClient = new BlobContainerClient(connectionString, containerName);
+    }
+
+    /// <summary>
+    /// Creates a new instance using a pre-built container client, allowing any authentication mode
+    /// (connection string, SAS, or token credential such as a managed identity).
+    /// </summary>
+    public TempFileAzureBlobStorage(BlobContainerClient containerClient, TempFileStorageOptions options) : base(options)
+    {
+        _containerClient = containerClient;
         _ensureContainerExists = new Lazy<Task>(() => _containerClient.CreateIfNotExistsAsync());
     }
 
