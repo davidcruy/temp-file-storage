@@ -67,6 +67,28 @@ builder.Services
     });
 ```
 
+Instead of a connection string, you can authenticate with a token credential (e.g. a managed identity via `DefaultAzureCredential`):
+
+```C#
+builder.Services
+    .AddTempFiles(options =>
+    {
+        options.AzureBlobStorage(new Uri("https://mystorageaccount.blob.core.windows.net"), new DefaultAzureCredential(), containerName: "temp-file-storage");
+    });
+```
+
+Or pass a pre-built `BlobContainerClient` for full control over authentication and client options:
+
+```C#
+builder.Services
+    .AddTempFiles(options =>
+    {
+        options.AzureBlobStorage(myBlobContainerClient);
+    });
+```
+
+> The identity used must be allowed to create the container and read/write blobs (e.g. the **Storage Blob Data Contributor** role).
+
 ### SqlServer
 
 Or, when you're not working in Azure, you can opt for SqlServer storage.
